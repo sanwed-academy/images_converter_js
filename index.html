@@ -35,7 +35,7 @@
                 </select>
             </div>
             <div>
-                <label for="toFormat" class="block mb-1 font-medium">To Format</label>
+                <label for="toFormat" class="block mb-1 font-medium">В</label>
                 <select id="toFormat" class="w-full p-2 border border-gray-300 rounded">
                     <option value="image/png">PNG</option>
                     <option value="image/jpeg">JPEG</option>
@@ -45,15 +45,77 @@
         </div>
 
         <button id="convertBtn"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded mb-4 transition">Convert</button>
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded mb-4 transition">Конвертировать</button>
 
         <div id="resultContainer" class="hidden">
             <h2 class="text-lg font-semibold mb-2">Готовое изображение:</h2>
             <img id="preview" class="w-full max-h-64 object-contain mb-2 rounded border border-gray-300" />
             <a id="downloadLink" href="#" download
-                class="block text-center bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded transition">Загрузить</a>
+                class="block text-center bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded transition">Установить</a>
         </div>
     </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const fromFormat = document.getElementById('fromFormat');
+        const toFormat = document.getElementById('toFormat');
+        const convertBtn = document.getElementById('convertBtn');
+        const resultContainer = document.getElementById('resultContainer');
+        const preview = document.getElementById('preview');
+        const downloadLink = document.getElementById('downloadLink');
+
+        fromFormat.addEventListener('change', () => {
+            imageInput.value = '';
+
+            const selected = fromFormat.value;
+            if (selected === 'auto') {
+                imageInput.accept = 'image/png, image/jpeg, image/webp';
+            } else {
+                const ext = selected.split('/')[1];
+                imageInput.accept = `.${ext}`;
+            }
+        });
+
+        imageInput.addEventListener('change', () => {
+            const file = imageInput.files[0];
+            if (!file) return;
+
+            if (fromFormat.value === 'auto') {
+                const detectedType = file.type;
+                if (['image/png', 'image/jpeg', 'image/webp'].includes(detectedType)) {
+                    fromFormat.value = detectedType;
+                }
+            }
+        });
+
+        convertBtn.addEventListener('click', async () => {
+            const file = imageInput.files[0];
+            if (!file) return alert('Пожалуйста, загрузите изображение');
+
+            const outputFormat = toFormat.value;
+            const img = new Image();
+            const reader = new FileReader();
+
+            reader.onload = () => {
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    const dataURL = canvas.toDataURL(outputFormat);
+                    preview.src = dataURL;
+                    downloadLink.href = dataURL;
+                    downloadLink.download = `${file.name}.${outputFormat.split('/')[1]}`;
+                    resultContainer.classList.remove('hidden');
+                };
+                img.src = reader.result;
+            };
+
+            reader.readAsDataURL(file);
+        });
+    </script>
 </body>
 
 </html>
